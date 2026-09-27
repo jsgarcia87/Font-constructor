@@ -3,636 +3,263 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gothic Pixel Font Studio & Generator</title>
-  <!-- OpenType.js para compilar la fuente OTF/TTF al vuelo en el cliente -->
-  <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
-  <style>
-    :root {
-      --bg-dark: #121316;
-      --panel-bg: #1c1d22;
-      --panel-border: #2d2f38;
-      --accent: #d4a359;
-      --accent-hover: #e6b76e;
-      --text-main: #f0f0f4;
-      --text-muted: #8b8e9b;
-      --grid-bg: #16171b;
-      --pixel-on: #e6c88b;
-      --pixel-off: #202127;
-      --danger: #e05656;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    /* Header */
-    header {
-      background: var(--panel-bg);
-      border-bottom: 1px solid var(--panel-border);
-      padding: 12px 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .brand h1 {
-      font-size: 18px;
-      letter-spacing: 0.5px;
-      color: var(--accent);
-      font-weight: 700;
-    }
-    .brand span {
-      background: #2a2c35;
-      color: var(--text-muted);
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 4px;
-      text-transform: uppercase;
-      font-weight: 600;
-    }
-
-    /* Main Layout */
-    .main-workspace {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
-
-    /* Left Sidebar: Controls & Sliders */
-    .sidebar {
-      width: 340px;
-      background: var(--panel-bg);
-      border-right: 1px solid var(--panel-border);
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-    }
-    .sidebar-section {
-      padding: 18px 20px;
-      border-bottom: 1px solid var(--panel-border);
-    }
-    .sidebar-section h3 {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--accent);
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .control-group {
-      margin-bottom: 16px;
-    }
-    .control-group:last-child {
-      margin-bottom: 0;
-    }
-    .control-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 13px;
-      margin-bottom: 6px;
-    }
-    .control-header span.val {
-      font-family: monospace;
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    input[type="range"] {
-      width: 100%;
-      height: 6px;
-      background: #2b2d36;
-      border-radius: 3px;
-      outline: none;
-      -webkit-appearance: none;
-    }
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      background: var(--accent);
-      border-radius: 50%;
-      cursor: pointer;
-      transition: transform 0.1s;
-    }
-    input[type="range"]::-webkit-slider-thumb:hover {
-      transform: scale(1.2);
-    }
-
-    .btn-row {
-      display: flex;
-      gap: 8px;
-    }
-    button {
-      padding: 10px 14px;
-      border-radius: 6px;
-      border: 1px solid var(--panel-border);
-      background: #282a32;
-      color: var(--text-main);
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: all 0.15s ease;
-    }
-    button:hover {
-      background: #333640;
-      border-color: #404452;
-    }
-    button.primary {
-      background: var(--accent);
-      color: #121316;
-      border-color: var(--accent);
-    }
-    button.primary:hover {
-      background: var(--accent-hover);
-    }
-    button.full {
-      width: 100%;
-    }
-
-    /* Center: Canvas / Pixel Grid Editor */
-    .editor-stage {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      background: var(--bg-dark);
-      overflow: hidden;
-    }
-
-    .editor-toolbar {
-      padding: 12px 20px;
-      background: #17181c;
-      border-bottom: 1px solid var(--panel-border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .char-badge {
-      font-size: 20px;
-      font-weight: bold;
-      color: var(--accent);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .char-badge small {
-      font-size: 13px;
-      color: var(--text-muted);
-      font-weight: normal;
-    }
-
-    .canvas-container {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      position: relative;
-      user-select: none;
-      overflow: auto;
-      padding: 20px;
-    }
-    #editorCanvas {
-      background: var(--grid-bg);
-      border: 2px solid var(--panel-border);
-      border-radius: 6px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      cursor: crosshair;
-    }
-
-    /* Right Panel: Alphabet Selector & Live Text Preview */
-    .preview-panel {
-      width: 380px;
-      background: var(--panel-bg);
-      border-left: 1px solid var(--panel-border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .glyph-grid-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-    }
-    .glyph-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 6px;
-    }
-    .glyph-card {
-      aspect-ratio: 1;
-      background: #17181d;
-      border: 1px solid var(--panel-border);
-      border-radius: 6px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      position: relative;
-    }
-    .glyph-card:hover {
-      background: #252730;
-      border-color: var(--accent);
-    }
-    .glyph-card.active {
-      border-color: var(--accent);
-      background: #2e2b23;
-    }
-    .glyph-card canvas {
-      width: 36px;
-      height: 36px;
-      image-rendering: pixelated;
-    }
-    .glyph-card .char-label {
-      font-size: 10px;
-      color: var(--text-muted);
-      position: absolute;
-      bottom: 3px;
-      right: 5px;
-    }
-
-    /* Live Tester Box */
-    .live-test-box {
-      border-top: 1px solid var(--panel-border);
-      padding: 16px;
-      background: #17181d;
-    }
-    .live-test-box input {
-      width: 100%;
-      padding: 10px 12px;
-      background: #21232b;
-      border: 1px solid var(--panel-border);
-      border-radius: 6px;
-      color: #fff;
-      font-size: 14px;
-      margin-bottom: 12px;
-    }
-    .test-render-canvas-wrap {
-      background: #0f1013;
-      border: 1px solid #282a33;
-      border-radius: 6px;
-      padding: 12px;
-      min-height: 80px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow-x: auto;
-    }
-    #liveRenderCanvas {
-      image-rendering: pixelated;
-    }
-
-    /* Status Bar */
-    footer {
-      background: #111215;
-      border-top: 1px solid var(--panel-border);
-      padding: 6px 16px;
-      font-size: 12px;
-      color: var(--text-muted);
-      display: flex;
-      justify-content: space-between;
-    }
-  </style>
+  <title>Forja Heráldica — Generador de fuente gótica pixel art</title>
+  <meta name="description" content="Generador de fuentes pixel art de estilo heráldico, medieval y gótico (textura). Abecedario completo con acentos, símbolos y ornamentos, editor de glifos y exportación a OTF, PNG, SVG y kit web.">
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
-  <header>
+  <header class="topbar">
     <div class="brand">
-      <h1>GOTHIC PIXEL FORGE</h1>
-      <span>Textura Quadrata • Vector & Web Exporter</span>
+      <canvas id="brandCanvas" aria-label="Forja Heráldica"></canvas>
+      <p class="tagline">Generador de fuente gótica · heráldica · pixel art</p>
     </div>
-    <div style="display: flex; gap: 10px;">
-      <button onclick="resetCurrentGlyph()">Restaurar Glifo</button>
-      <button class="primary" onclick="exportOTF()">Exportar Fuente (.OTF)</button>
-    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab-btn active" data-tab="gen" role="tab">Generador</button>
+      <button class="tab-btn" data-tab="alpha" role="tab">Abecedario</button>
+      <button class="tab-btn" data-tab="edit" role="tab">Editor de glifos</button>
+    </nav>
   </header>
 
-  <div class="main-workspace">
-    <!-- Left Sidebar: Manejadores y Controles Paramétricos -->
-    <aside class="sidebar">
-      <div class="sidebar-section">
-        <h3>Manejadores de Píxel y Estilo</h3>
+  <!-- ============================ GENERADOR ============================ -->
+  <section class="tab-panel active" id="tab-gen">
+    <aside class="controls">
 
-        <!-- Control 1: Nivel de Píxel (Resolución / Tamaño celda) -->
-        <div class="control-group">
-          <div class="control-header">
-            <label>Nivel de Píxel / Resolución:</label>
-            <span class="val" id="valGridRes">20×20</span>
-          </div>
-          <input type="range" id="sliderGridRes" min="16" max="28" step="2" value="20">
-          <small style="color:var(--text-muted); font-size:11px;">Ajusta el nivel de granularidad gótica (16=Retro, 28=Detallada).</small>
-        </div>
+      <details open>
+        <summary>Texto</summary>
+        <textarea id="textInput" rows="3" spellcheck="false">Blanc IX</textarea>
+        <div class="chips" id="insertChips" title="Insertar ornamento"></div>
+      </details>
 
-        <!-- Control 2: Grosor de Fuste / Trazo -->
-        <div class="control-group">
-          <div class="control-header">
-            <label>Grosor de Fuste (Stem):</label>
-            <span class="val" id="valStem">2 px</span>
-          </div>
-          <input type="range" id="sliderStem" min="1" max="4" step="1" value="2">
-          <small style="color:var(--text-muted); font-size:11px;">Controla la anchura de las columnas verticales góticas.</small>
-        </div>
+      <details open>
+        <summary>Estilos predefinidos</summary>
+        <div class="presets" id="presets"></div>
+      </details>
 
-        <!-- Control 3: Remates en Diamante (Serifas 45°) -->
-        <div class="control-group">
-          <div class="control-header">
-            <label>Acento Remates Góticos (45°):</label>
-            <span class="val" id="valDiamond">100%</span>
-          </div>
-          <input type="range" id="sliderDiamond" min="0" max="100" step="25" value="100">
-          <small style="color:var(--text-muted); font-size:11px;">Intensidad de las puntas angulares superiores e inferiores.</small>
-        </div>
+      <details open>
+        <summary>Composición</summary>
+        <label class="row">Tamaño de píxel <output data-out="scale"></output>
+          <input type="range" min="1" max="16" step="1" data-k="scale"></label>
+        <label class="row">Grosor
+          <select data-k="weight">
+            <option value="0">Normal (textura)</option>
+            <option value="1">Negrita</option>
+            <option value="2">Extra negra</option>
+          </select></label>
+        <label class="row">Espaciado <output data-out="tracking"></output>
+          <input type="range" min="0" max="6" step="1" data-k="tracking"></label>
+        <label class="row">Interlineado <output data-out="leading"></output>
+          <input type="range" min="-4" max="12" step="1" data-k="leading"></label>
+        <label class="row">Alineación
+          <select data-k="align">
+            <option value="left">Izquierda</option>
+            <option value="center">Centro</option>
+            <option value="right">Derecha</option>
+          </select></label>
+        <label class="row">Margen horizontal <output data-out="padX"></output>
+          <input type="range" min="0" max="40" step="1" data-k="padX"></label>
+        <label class="row">Margen vertical <output data-out="padY"></output>
+          <input type="range" min="0" max="40" step="1" data-k="padY"></label>
+      </details>
 
-        <!-- Control 4: Espaciado / Tracking -->
-        <div class="control-group">
-          <div class="control-header">
-            <label>Espaciado entre Caracteres:</label>
-            <span class="val" id="valTracking">2 px</span>
-          </div>
-          <input type="range" id="sliderTracking" min="1" max="6" step="1" value="2">
-        </div>
-      </div>
+      <details open>
+        <summary>Esmalte de la letra</summary>
+        <div class="tinctures" data-target="fill.c1"></div>
+        <label class="row">Relleno
+          <select data-k="fill.mode">
+            <option value="solid">Liso</option>
+            <option value="metal">Metálico (oro / plata)</option>
+            <option value="gradient">Degradado por bandas</option>
+            <option value="fess">Cortado (dos esmaltes)</option>
+            <option value="alternate">Alterno (letra a letra)</option>
+          </select></label>
+        <label class="row color">Color principal <input type="color" data-k="fill.c1"></label>
+        <label class="row color" data-show="fill.mode:gradient,fess,alternate">Segundo color <input type="color" data-k="fill.c2"></label>
+        <label class="row" data-show="fill.mode:gradient">Bandas <output data-out="fill.steps"></output>
+          <input type="range" min="2" max="8" step="1" data-k="fill.steps"></label>
+        <label class="row check"><input type="checkbox" data-k="bevel"> Relieve (luz y sombra en los bordes)</label>
+      </details>
 
-      <!-- Métricas del Glifo Seleccionado -->
-      <div class="sidebar-section">
-        <h3>Métricas del Glifo Actual</h3>
-        <div class="control-group">
-          <div class="control-header">
-            <label>Ancho de Avance (Columnas):</label>
-            <span class="val" id="valAdvance">14 cols</span>
-          </div>
-          <input type="range" id="sliderAdvance" min="6" max="24" step="1" value="14">
-        </div>
-        <div class="btn-row" style="margin-top: 10px;">
-          <button style="flex:1;" onclick="clearCanvas()">Limpiar Lienzo</button>
-          <button style="flex:1;" onclick="invertGlyph()">Invertir</button>
-        </div>
-      </div>
+      <details>
+        <summary>Contorno y sombra</summary>
+        <label class="row">Contorno <output data-out="outline.size"></output>
+          <input type="range" min="0" max="4" step="1" data-k="outline.size"></label>
+        <label class="row color">Color del contorno <input type="color" data-k="outline.color"></label>
+        <label class="row">Sombra X <output data-out="shadow.x"></output>
+          <input type="range" min="-6" max="6" step="1" data-k="shadow.x"></label>
+        <label class="row">Sombra Y <output data-out="shadow.y"></output>
+          <input type="range" min="-6" max="6" step="1" data-k="shadow.y"></label>
+        <label class="row color">Color de la sombra <input type="color" data-k="shadow.color"></label>
+      </details>
 
-      <!-- Exportación Web & Formatos -->
-      <div class="sidebar-section" style="margin-top:auto;">
-        <h3>Exportación para Diseño y Web</h3>
-        <button class="primary full" onclick="exportOTF()" style="margin-bottom:8px;">
-          Descargar .OTF (Illustrator / Figma / Mac / Win)
-        </button>
-        <button class="full" onclick="exportWebPackage()" style="margin-bottom:8px;">
-          Descargar Kit Web (@font-face + CSS)
-        </button>
-        <button class="full" onclick="exportBitmapAtlas()">
-          Exportar Sprite Sheet (PNG + JSON)
-        </button>
-      </div>
+      <details open>
+        <summary>Campo (fondo) y marco</summary>
+        <label class="row">Campo
+          <select data-k="bg.mode">
+            <option value="none">Transparente</option>
+            <option value="solid">Liso</option>
+            <option value="leather">Cuero repujado</option>
+            <option value="parchment">Pergamino</option>
+            <option value="checky">Ajedrezado</option>
+            <option value="lozengy">Losanjado (diaprado)</option>
+            <option value="banner">Estandarte (cola de golondrina)</option>
+          </select></label>
+        <div class="tinctures" data-target="bg.c1"></div>
+        <label class="row color" data-show="bg.mode:solid,leather,parchment,checky,lozengy,banner">Color del campo <input type="color" data-k="bg.c1"></label>
+        <label class="row color" data-show="bg.mode:parchment,checky,lozengy">Segundo color <input type="color" data-k="bg.c2"></label>
+        <label class="row" data-show="bg.mode:checky,lozengy">Tamaño del motivo <output data-out="bg.check"></output>
+          <input type="range" min="1" max="12" step="1" data-k="bg.check"></label>
+        <label class="row check" data-show="bg.mode:solid,leather,parchment,checky,lozengy,banner"><input type="checkbox" data-k="bg.frame"> Marco doble con rombos</label>
+        <label class="row color" data-show="bg.frame:true">Color del marco <input type="color" data-k="bg.frameColor"></label>
+      </details>
+
+      <details>
+        <summary>Capitular iluminada</summary>
+        <label class="row check"><input type="checkbox" data-k="cap.on"> Destacar la primera letra</label>
+        <label class="row color">Color de la caja <input type="color" data-k="cap.box"></label>
+        <label class="row color">Color de la letra <input type="color" data-k="cap.letter"></label>
+        <label class="row color">Color del filete <input type="color" data-k="cap.border"></label>
+      </details>
     </aside>
 
-    <!-- Center: Lienzo Interactivo Pixel Art -->
-    <main class="editor-stage">
-      <div class="editor-toolbar">
-        <div class="char-badge">
-          <span id="currentCharDisplay">B</span>
-          <small id="currentCharCode">U+0042 • Mayúscula</small>
-        </div>
-        <div style="display:flex; gap:10px; align-items:center;">
-          <span style="font-size:12px; color:var(--text-muted);">Pintar: Clic / Arrastrar • Borrar: Clic Derecho</span>
-          <button onclick="toggleGridLines()" id="btnToggleGrid">Ocultar Guías</button>
+    <main class="stage">
+      <div class="stage-bar">
+        <div class="stage-info" id="stageInfo">—</div>
+        <div class="stage-actions">
+          <label class="mini check"><input type="checkbox" id="checkerToggle" checked> Cuadrícula de transparencia</label>
         </div>
       </div>
-
-      <div class="canvas-container">
-        <canvas id="editorCanvas" width="480" height="480"></canvas>
+      <div class="canvas-wrap checker" id="canvasWrap">
+        <canvas id="previewCanvas"></canvas>
+      </div>
+      <div class="export-bar">
+        <button class="primary" id="btnPNG">Descargar PNG</button>
+        <button id="btnSVG">Descargar SVG</button>
+        <button id="btnCopy">Copiar imagen</button>
+        <span class="sep"></span>
+        <button id="btnOTFQuick">Descargar fuente .OTF</button>
       </div>
     </main>
+  </section>
 
-    <!-- Right Sidebar: Catálogo de Caracteres & Test en Vivo -->
-    <aside class="preview-panel">
-      <div style="padding:14px 16px; border-bottom:1px solid var(--panel-border); font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--accent); font-weight:600;">
-        Abecedario Gótico (Click para editar)
-      </div>
-
-      <div class="glyph-grid-container">
-        <div class="glyph-grid" id="glyphGrid"></div>
-      </div>
-
-      <div class="live-test-box">
-        <div style="font-size:12px; color:var(--accent); font-weight:600; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">
-          Vista Previa en Tiempo Real
+  <!-- ============================ ABECEDARIO =========================== -->
+  <section class="tab-panel" id="tab-alpha">
+    <div class="alpha-layout">
+      <div class="alpha-main">
+        <div class="alpha-head">
+          <h2>Repertorio completo</h2>
+          <p id="glyphCount" class="muted"></p>
+          <p class="muted small">Pulsa cualquier glifo para editarlo. Las letras acentuadas se componen a partir de la letra base: si editas la <b>a</b>, cambian también <b>á à â ä…</b> (salvo que las edites por separado).</p>
         </div>
-        <input type="text" id="testTextInput" value="Blanc IX 123">
-        <div class="test-render-canvas-wrap">
-          <canvas id="liveRenderCanvas" height="60"></canvas>
+        <div id="alphabet"></div>
+      </div>
+
+      <aside class="font-panel">
+        <h3>Fuente</h3>
+        <label class="row">Nombre de la familia
+          <input type="text" id="fontName" value="Blason Pixel" maxlength="40"></label>
+        <label class="row">Grosor exportado
+          <select id="fontWeight">
+            <option value="0">Normal</option>
+            <option value="1">Negrita</option>
+            <option value="2">Extra negra</option>
+          </select></label>
+        <button class="primary full" id="btnOTF">Descargar .OTF (Illustrator, Figma, Word…)</button>
+        <button class="full" id="btnCSS">Descargar kit web (.css con @font-face)</button>
+        <button class="full" id="btnSprite">Sprite sheet PNG (juegos)</button>
+        <button class="full" id="btnSpriteJSON">Mapa del sprite (.json)</button>
+
+        <h3>Proyecto</h3>
+        <button class="full" id="btnSaveProject">Guardar proyecto (.json)</button>
+        <label class="full file-btn">Cargar proyecto…<input type="file" id="fileProject" accept=".json,application/json" hidden></label>
+        <button class="full danger" id="btnResetAll">Restaurar todos los glifos</button>
+
+        <h3>Prueba de la fuente instalada</h3>
+        <p class="muted small" id="liveFontStatus">Compilando la fuente…</p>
+        <select id="liveSize">
+          <option value="22">22 px (1×)</option>
+          <option value="44" selected>44 px (2×)</option>
+          <option value="66">66 px (3×)</option>
+          <option value="88">88 px (4×)</option>
+        </select>
+        <textarea id="liveText" rows="4" class="live-font">Blanc IX
+Ávila, Nuñez & Cía. — ¿Año 1492?</textarea>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============================== EDITOR ============================= -->
+  <section class="tab-panel" id="tab-edit">
+    <div class="editor-layout">
+      <div class="editor-side">
+        <div class="glyph-picker">
+          <button id="btnPrev" title="Anterior">◀</button>
+          <input type="text" id="charInput" maxlength="2" value="B" aria-label="Carácter">
+          <button id="btnNext" title="Siguiente">▶</button>
+        </div>
+        <p class="char-meta" id="charMeta"></p>
+
+        <h3>Herramientas</h3>
+        <div class="tool-row">
+          <button class="tool active" data-tool="pen">✎ Lápiz</button>
+          <button class="tool" data-tool="eraser">⌫ Goma</button>
+        </div>
+        <p class="muted small">Clic o arrastre para pintar. Si empiezas sobre un píxel encendido, borra. Clic derecho: borrar.</p>
+
+        <h3>Ancho y posición</h3>
+        <div class="tool-grid">
+          <button id="btnNarrow">− columna</button>
+          <button id="btnWiden">+ columna</button>
+          <button data-shift="-1,0">← mover</button>
+          <button data-shift="1,0">mover →</button>
+          <button data-shift="0,-1">↑ subir</button>
+          <button data-shift="0,1">↓ bajar</button>
+        </div>
+
+        <h3>Glifo</h3>
+        <div class="tool-grid">
+          <button id="btnFlip">Espejo ↔</button>
+          <button id="btnClear">Vaciar</button>
+          <button id="btnCopyFrom">Copiar de…</button>
+          <button id="btnRestore" class="danger">Restaurar original</button>
         </div>
       </div>
-    </aside>
-  </div>
 
-  <footer>
-    <span>Estilo inspirado en caligrafía gótica / fractura medieval (Blanc IX)</span>
-    <span id="fontStatusInfo">52 Glifos cargados • Rejilla sincronizada</span>
+      <div class="editor-stage">
+        <div class="editor-canvas-wrap">
+          <canvas id="editorCanvas"></canvas>
+        </div>
+        <div class="legend">
+          <span><i class="g-acc"></i>zona de acentos</span>
+          <span><i class="g-cap"></i>altura de mayúsculas</span>
+          <span><i class="g-x"></i>altura de x</span>
+          <span><i class="g-base"></i>línea base</span>
+          <span><i class="g-desc"></i>descendentes</span>
+        </div>
+      </div>
+
+      <div class="editor-preview">
+        <h3>Vista en contexto</h3>
+        <input type="text" id="editorSample" value="Blanc IX">
+        <div class="mini-preview"><canvas id="editorPreview"></canvas></div>
+        <div class="mini-preview"><canvas id="editorPreview2"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span>Estilo base inspirado en la textura gótica de «Blanc IX» · rejilla de 22 filas · fustes de 3 px</span>
+    <span id="footStatus"></span>
   </footer>
 
-  <script>
-    /* =========================================================================
-       1. DEFINICIÓN DEL REPERTORIO TIPOGRÁFICO GÓTICO BASE (16x16 / escalable)
-       Plantillas vectoriales/matriciales con estética Textur:
-       - Remates biselados a 45º (rombo/diamante).
-       - Fustes dobles verticales.
-       - Cortes interiores afilados.
-       ========================================================================= */
+  <div class="toast" id="toast"></div>
 
-    let currentRes = 20; // 20x20 por defecto (ideal para captar los diamantes góticos)
-    let currentChar = 'B';
-    let stemWeight = 2;
-    let showGuides = true;
-    let isDrawing = false;
-    let drawMode = 1; // 1 = paint, 0 = erase
-
-    // Colección de caracteres predefinidos
-    const CHAR_SET = [
-      'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
-      'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
-      '0','1','2','3','4','5','6','7','8','9','-','_','.',',',':','!','?','/'
-    ];
-
-    // Almacén de matrices para cada glifo
-    const glyphDatabase = {};
-
-    // Generador procedural de arquetipos góticos para inicializar todo el abecedario
-    function generateGothicArchetype(char, res, stem, diamond) {
-      const mat = Array(res).fill(0).map(() => Array(res).fill(0));
-      const baseline = Math.floor(res * 0.78);
-      const capHeight = Math.floor(res * 0.18);
-      const xHeight = Math.floor(res * 0.42);
-      const isUpper = (char >= 'A' && char <= 'Z');
-      const isNum = (char >= '0' && char <= '9');
-
-      const top = isUpper ? capHeight : (['b','d','f','h','k','l','t'].includes(char) ? capHeight : xHeight);
-      const bottom = ['g','j','p','q','y'].includes(char) ? Math.min(res - 2, baseline + 4) : baseline;
-      const left = 3;
-      const right = Math.min(res - 4, left + (isUpper ? 11 : 8));
-      const midX = Math.floor((left + right) / 2);
-      const midY = Math.floor((top + bottom) / 2);
-
-      // Auxiliares para trazar fustes con remates góticos
-      function drawStem(col, y1, y2) {
-        for (let y = y1; y <= y2; y++) {
-          for (let s = 0; s < stem; s++) {
-            if (col + s < res && y < res && y >= 0) mat[y][col + s] = 1;
-          }
-        }
-        // Remate en diamante superior e inferior
-        if (diamond > 0) {
-          if (y1 > 0 && col - 1 >= 0) mat[y1][col - 1] = 1;
-          if (y1 - 1 >= 0) mat[y1 - 1][col] = 1;
-          if (y2 < res - 1) mat[y2 + 1][col] = 1;
-          if (y2 < res && col + stem < res) mat[y2][col + stem] = 1;
-        }
-      }
-
-      function drawHBar(y, x1, x2) {
-        for (let x = x1; x <= x2; x++) {
-          if (x < res && y < res && y >= 0) mat[y][x] = 1;
-        }
-      }
-
-      function drawDiag(x1, y1, x2, y2) {
-        const dx = Math.abs(x2 - x1), dy = Math.abs(y2 - y1);
-        const sx = x1 < x2 ? 1 : -1, sy = y1 < y2 ? 1 : -1;
-        let err = dx - dy, cx = x1, cy = y1;
-        while (true) {
-          if (cx >= 0 && cx < res && cy >= 0 && cy < res) mat[cy][cx] = 1;
-          if (cx === x2 && cy === y2) break;
-          const e2 = 2 * err;
-          if (e2 > -dy) { err -= dy; cx += sx; }
-          if (e2 < dx) { err += dx; cy += sy; }
-        }
-      }
-
-      // Modelado específico por glifo con rasgos de "Blanc IX"
-      switch(char) {
-        case 'B':
-          drawStem(left, top, bottom);
-          drawHBar(top, left, right - 2);
-          drawHBar(midY, left, right - 2);
-          drawHBar(bottom, left, right - 2);
-          drawDiag(right - 2, top + 1, right, top + 3);
-          drawStem(right, top + 3, midY - 2);
-          drawDiag(right, midY - 2, right - 2, midY);
-          drawStem(right, midY + 2, bottom - 3);
-          drawDiag(right, bottom - 3, right - 2, bottom);
-          // Espina gótica interna
-          drawDiag(left + stem + 1, midY - 2, left + stem + 3, midY);
-          break;
-
-        case 'l':
-          drawStem(midX - 1, top, bottom);
-          if (diamond > 0) {
-            mat[bottom][midX + stem] = 1;
-            mat[bottom - 1][midX + stem + 1] = 1;
-          }
-          break;
-
-        case 'a':
-          drawStem(right - stem, top, bottom);
-          drawHBar(top, left + 1, right - stem);
-          drawHBar(midY, left + 1, right - stem);
-          drawHBar(bottom, left + 1, right - stem);
-          drawStem(left, midY, bottom);
-          drawDiag(left, top + 1, left + 2, top);
-          break;
-
-        case 'n':
-          drawStem(left, top, bottom);
-          drawStem(right - stem, top + 1, bottom);
-          drawHBar(top, left, right - stem);
-          drawDiag(left, top + 1, left + 2, top);
-          break;
-
-        case 'c':
-          drawStem(left, top, bottom);
-          drawHBar(top, left, right - 1);
-          drawHBar(bottom, left, right - 1);
-          drawDiag(right - 2, top, right, top + 2);
-          drawDiag(right - 2, bottom, right, bottom - 2);
-          break;
-
-        case 'I':
-          drawStem(midX - 1, top, bottom);
-          drawHBar(top - (diamond ? 1 : 0), midX - 3, midX + stem + 1);
-          drawHBar(bottom + (diamond ? 1 : 0), midX - 3, midX + stem + 1);
-          break;
-
-        case 'X':
-          drawDiag(left + 1, top, right - 1, bottom);
-          drawDiag(right - 1, top, left + 1, bottom);
-          if (stem > 1) {
-            drawDiag(left + 2, top, right, bottom);
-            drawDiag(right - 2, top, left, bottom);
-          }
-          // Remates en esquinas
-          drawHBar(top, left, left + 2);
-          drawHBar(top, right - 2, right);
-          drawHBar(bottom, left, left + 2);
-          drawHBar(bottom, right - 2, right);
-          break;
-
-        case 'A':
-          drawStem(left, top + 3, bottom);
-          drawStem(right - stem, top + 3, bottom);
-          drawDiag(left, top + 3, midX, top);
-          drawDiag(right - stem, top + 3, midX, top);
-          drawHBar(midY + 1, left, right);
-          break;
-
-        case 'O':
-        case '0':
-          drawStem(left, top + 2, bottom - 2);
-          drawStem(right - stem, top + 2, bottom - 2);
-          drawHBar(top, left + 2, right - stem - 2);
-          drawHBar(bottom, left + 2, right - stem - 2);
-          drawDiag(left, top + 2, left + 2, top);
-          drawDiag(right - 1, top + 2, right - 3, top);
-          drawDiag(left, bottom - 2, left + 2, bottom);
-          drawDiag(right - 1, bottom - 2, right - 3, bottom);
-          break;
-
-        default:
-          // Fallback gótico paramétrico estándar
-          drawStem(left, top, bottom);
-          drawHBar(top, left, right);
-          if (isUpper) {
-            drawStem(right - stem, top, midY);
-            drawHBar(midY, left, right);
-          } else {
-            drawHBar(bottom, left, right);
-          }
-          break;
-      }
-
-      return {
-        matrix: mat,
-        advance: Math.min(res, right + 2)
-      };
-    }
-
-    // Inicializar todo el abecedario
-    function initFont() {
-      const diamondVal = parseInt(document.getElementById('sliderDiamo
+  <!-- opentype.js (MIT) compila la fuente .OTF en el navegador, sin conexión -->
+  <script src="js/vendor/opentype.min.js"></script>
+  <script src="js/glyphs.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
