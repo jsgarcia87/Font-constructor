@@ -2,212 +2,637 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Generador Tipográfico Pixel Gótico</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gothic Pixel Font Studio & Generator</title>
+  <!-- OpenType.js para compilar la fuente OTF/TTF al vuelo en el cliente -->
   <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
   <style>
-    :root { --bg: #141417; --panel: #1e1e24; --accent: #d4a359; --text: #eee; }
-    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 24px; display: flex; gap: 28px; }
-    .panel { background: var(--panel); padding: 20px; border-radius: 8px; border: 1px solid #333; }
-    #grid { display: grid; grid-template-columns: repeat(16, 22px); grid-gap: 1px; background: #333; padding: 1px; width: fit-content; }
-    .cell { width: 22px; height: 22px; background: #18181b; cursor: pointer; user-select: none; }
-    .cell.active { background: var(--accent); }
-    .cell.guide-baseline { border-bottom: 2px solid #e05656; }
-    .controls { display: flex; flex-direction: column; gap: 14px; min-width: 280px; }
-    label { font-size: 13px; color: #aaa; }
-    select, input, button { padding: 9px 12px; background: #2a2a32; color: #fff; border: 1px solid #444; border-radius: 4px; font-size: 14px; }
-    button { cursor: pointer; font-weight: 600; }
-    button.primary { background: #3b6845; border-color: #4f8b5d; }
-    button.primary:hover { background: #477c53; }
-    .preview-box { margin-top: 15px; padding: 12px; background: #111; border-radius: 4px; font-size: 28px; min-height: 40px; }
+    :root {
+      --bg-dark: #121316;
+      --panel-bg: #1c1d22;
+      --panel-border: #2d2f38;
+      --accent: #d4a359;
+      --accent-hover: #e6b76e;
+      --text-main: #f0f0f4;
+      --text-muted: #8b8e9b;
+      --grid-bg: #16171b;
+      --pixel-on: #e6c88b;
+      --pixel-off: #202127;
+      --danger: #e05656;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Header */
+    header {
+      background: var(--panel-bg);
+      border-bottom: 1px solid var(--panel-border);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand h1 {
+      font-size: 18px;
+      letter-spacing: 0.5px;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .brand span {
+      background: #2a2c35;
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    /* Main Layout */
+    .main-workspace {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Left Sidebar: Controls & Sliders */
+    .sidebar {
+      width: 340px;
+      background: var(--panel-bg);
+      border-right: 1px solid var(--panel-border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .sidebar-section {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--panel-border);
+    }
+    .sidebar-section h3 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .control-group {
+      margin-bottom: 16px;
+    }
+    .control-group:last-child {
+      margin-bottom: 0;
+    }
+    .control-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+    .control-header span.val {
+      font-family: monospace;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      background: #2b2d36;
+      border-radius: 3px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+    }
+    button {
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--panel-border);
+      background: #282a32;
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    button:hover {
+      background: #333640;
+      border-color: #404452;
+    }
+    button.primary {
+      background: var(--accent);
+      color: #121316;
+      border-color: var(--accent);
+    }
+    button.primary:hover {
+      background: var(--accent-hover);
+    }
+    button.full {
+      width: 100%;
+    }
+
+    /* Center: Canvas / Pixel Grid Editor */
+    .editor-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-dark);
+      overflow: hidden;
+    }
+
+    .editor-toolbar {
+      padding: 12px 20px;
+      background: #17181c;
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .char-badge {
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .char-badge small {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: normal;
+    }
+
+    .canvas-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      user-select: none;
+      overflow: auto;
+      padding: 20px;
+    }
+    #editorCanvas {
+      background: var(--grid-bg);
+      border: 2px solid var(--panel-border);
+      border-radius: 6px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      cursor: crosshair;
+    }
+
+    /* Right Panel: Alphabet Selector & Live Text Preview */
+    .preview-panel {
+      width: 380px;
+      background: var(--panel-bg);
+      border-left: 1px solid var(--panel-border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .glyph-grid-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .glyph-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+    }
+    .glyph-card {
+      aspect-ratio: 1;
+      background: #17181d;
+      border: 1px solid var(--panel-border);
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+    .glyph-card:hover {
+      background: #252730;
+      border-color: var(--accent);
+    }
+    .glyph-card.active {
+      border-color: var(--accent);
+      background: #2e2b23;
+    }
+    .glyph-card canvas {
+      width: 36px;
+      height: 36px;
+      image-rendering: pixelated;
+    }
+    .glyph-card .char-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      position: absolute;
+      bottom: 3px;
+      right: 5px;
+    }
+
+    /* Live Tester Box */
+    .live-test-box {
+      border-top: 1px solid var(--panel-border);
+      padding: 16px;
+      background: #17181d;
+    }
+    .live-test-box input {
+      width: 100%;
+      padding: 10px 12px;
+      background: #21232b;
+      border: 1px solid var(--panel-border);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .test-render-canvas-wrap {
+      background: #0f1013;
+      border: 1px solid #282a33;
+      border-radius: 6px;
+      padding: 12px;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: auto;
+    }
+    #liveRenderCanvas {
+      image-rendering: pixelated;
+    }
+
+    /* Status Bar */
+    footer {
+      background: #111215;
+      border-top: 1px solid var(--panel-border);
+      padding: 6px 16px;
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
   </style>
 </head>
 <body>
 
-  <div class="panel">
-    <h3 style="margin-top:0;">Matriz de Dibujo (16×16)</h3>
-    <div id="grid"></div>
-    <p style="font-size: 12px; color: #888; margin-top: 8px;">Línea roja: Línea base sugerida (Y=12).</p>
+  <header>
+    <div class="brand">
+      <h1>GOTHIC PIXEL FORGE</h1>
+      <span>Textura Quadrata • Vector & Web Exporter</span>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <button onclick="resetCurrentGlyph()">Restaurar Glifo</button>
+      <button class="primary" onclick="exportOTF()">Exportar Fuente (.OTF)</button>
+    </div>
+  </header>
+
+  <div class="main-workspace">
+    <!-- Left Sidebar: Manejadores y Controles Paramétricos -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h3>Manejadores de Píxel y Estilo</h3>
+
+        <!-- Control 1: Nivel de Píxel (Resolución / Tamaño celda) -->
+        <div class="control-group">
+          <div class="control-header">
+            <label>Nivel de Píxel / Resolución:</label>
+            <span class="val" id="valGridRes">20×20</span>
+          </div>
+          <input type="range" id="sliderGridRes" min="16" max="28" step="2" value="20">
+          <small style="color:var(--text-muted); font-size:11px;">Ajusta el nivel de granularidad gótica (16=Retro, 28=Detallada).</small>
+        </div>
+
+        <!-- Control 2: Grosor de Fuste / Trazo -->
+        <div class="control-group">
+          <div class="control-header">
+            <label>Grosor de Fuste (Stem):</label>
+            <span class="val" id="valStem">2 px</span>
+          </div>
+          <input type="range" id="sliderStem" min="1" max="4" step="1" value="2">
+          <small style="color:var(--text-muted); font-size:11px;">Controla la anchura de las columnas verticales góticas.</small>
+        </div>
+
+        <!-- Control 3: Remates en Diamante (Serifas 45°) -->
+        <div class="control-group">
+          <div class="control-header">
+            <label>Acento Remates Góticos (45°):</label>
+            <span class="val" id="valDiamond">100%</span>
+          </div>
+          <input type="range" id="sliderDiamond" min="0" max="100" step="25" value="100">
+          <small style="color:var(--text-muted); font-size:11px;">Intensidad de las puntas angulares superiores e inferiores.</small>
+        </div>
+
+        <!-- Control 4: Espaciado / Tracking -->
+        <div class="control-group">
+          <div class="control-header">
+            <label>Espaciado entre Caracteres:</label>
+            <span class="val" id="valTracking">2 px</span>
+          </div>
+          <input type="range" id="sliderTracking" min="1" max="6" step="1" value="2">
+        </div>
+      </div>
+
+      <!-- Métricas del Glifo Seleccionado -->
+      <div class="sidebar-section">
+        <h3>Métricas del Glifo Actual</h3>
+        <div class="control-group">
+          <div class="control-header">
+            <label>Ancho de Avance (Columnas):</label>
+            <span class="val" id="valAdvance">14 cols</span>
+          </div>
+          <input type="range" id="sliderAdvance" min="6" max="24" step="1" value="14">
+        </div>
+        <div class="btn-row" style="margin-top: 10px;">
+          <button style="flex:1;" onclick="clearCanvas()">Limpiar Lienzo</button>
+          <button style="flex:1;" onclick="invertGlyph()">Invertir</button>
+        </div>
+      </div>
+
+      <!-- Exportación Web & Formatos -->
+      <div class="sidebar-section" style="margin-top:auto;">
+        <h3>Exportación para Diseño y Web</h3>
+        <button class="primary full" onclick="exportOTF()" style="margin-bottom:8px;">
+          Descargar .OTF (Illustrator / Figma / Mac / Win)
+        </button>
+        <button class="full" onclick="exportWebPackage()" style="margin-bottom:8px;">
+          Descargar Kit Web (@font-face + CSS)
+        </button>
+        <button class="full" onclick="exportBitmapAtlas()">
+          Exportar Sprite Sheet (PNG + JSON)
+        </button>
+      </div>
+    </aside>
+
+    <!-- Center: Lienzo Interactivo Pixel Art -->
+    <main class="editor-stage">
+      <div class="editor-toolbar">
+        <div class="char-badge">
+          <span id="currentCharDisplay">B</span>
+          <small id="currentCharCode">U+0042 • Mayúscula</small>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <span style="font-size:12px; color:var(--text-muted);">Pintar: Clic / Arrastrar • Borrar: Clic Derecho</span>
+          <button onclick="toggleGridLines()" id="btnToggleGrid">Ocultar Guías</button>
+        </div>
+      </div>
+
+      <div class="canvas-container">
+        <canvas id="editorCanvas" width="480" height="480"></canvas>
+      </div>
+    </main>
+
+    <!-- Right Sidebar: Catálogo de Caracteres & Test en Vivo -->
+    <aside class="preview-panel">
+      <div style="padding:14px 16px; border-bottom:1px solid var(--panel-border); font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--accent); font-weight:600;">
+        Abecedario Gótico (Click para editar)
+      </div>
+
+      <div class="glyph-grid-container">
+        <div class="glyph-grid" id="glyphGrid"></div>
+      </div>
+
+      <div class="live-test-box">
+        <div style="font-size:12px; color:var(--accent); font-weight:600; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">
+          Vista Previa en Tiempo Real
+        </div>
+        <input type="text" id="testTextInput" value="Blanc IX 123">
+        <div class="test-render-canvas-wrap">
+          <canvas id="liveRenderCanvas" height="60"></canvas>
+        </div>
+      </div>
+    </aside>
   </div>
 
-  <div class="panel controls">
-    <h3 style="margin-top:0;">Parámetros del Glifo</h3>
-    
-    <div>
-      <label>Carácter a editar:</label>
-      <select id="charSelect" style="width: 100%;"></select>
-    </div>
-
-    <div>
-      <label>Espacio/Ancho de la letra (columnas activas):</label>
-      <input type="number" id="glyphWidth" min="4" max="16" value="12" style="width: 100%;">
-    </div>
-
-    <div style="display: flex; gap: 8px;">
-      <button id="saveGlyphBtn" style="flex: 1;">Guardar Glifo</button>
-      <button id="clearBtn">Limpiar</button>
-    </div>
-
-    <hr style="border: 0; border-top: 1px solid #333; margin: 10px 0;">
-
-    <button id="exportOtfBtn" class="primary">Descargar Fuente (.otf)</button>
-
-    <div class="preview-box" id="previewArea">Blanc IX</div>
-  </div>
+  <footer>
+    <span>Estilo inspirado en caligrafía gótica / fractura medieval (Blanc IX)</span>
+    <span id="fontStatusInfo">52 Glifos cargados • Rejilla sincronizada</span>
+  </footer>
 
   <script>
-    const GRID_SIZE = 16;
-    const PIXEL_SCALE = 64; // 16 * 64 = 1024 Units per Em
-    const BASELINE_ROW = 12; // Fila donde reposa la letra
-    const CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 -_.,:;!?'\"/\\";
-    
-    const glyphData = {};
-    let currentMatrix = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
+    /* =========================================================================
+       1. DEFINICIÓN DEL REPERTORIO TIPOGRÁFICO GÓTICO BASE (16x16 / escalable)
+       Plantillas vectoriales/matriciales con estética Textur:
+       - Remates biselados a 45º (rombo/diamante).
+       - Fustes dobles verticales.
+       - Cortes interiores afilados.
+       ========================================================================= */
+
+    let currentRes = 20; // 20x20 por defecto (ideal para captar los diamantes góticos)
+    let currentChar = 'B';
+    let stemWeight = 2;
+    let showGuides = true;
     let isDrawing = false;
-    let drawMode = 1;
+    let drawMode = 1; // 1 = paint, 0 = erase
 
-    const gridEl = document.getElementById('grid');
-    const charSelect = document.getElementById('charSelect');
-    const widthInput = document.getElementById('glyphWidth');
+    // Colección de caracteres predefinidos
+    const CHAR_SET = [
+      'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+      'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
+      '0','1','2','3','4','5','6','7','8','9','-','_','.',',',':','!','?','/'
+    ];
 
-    // Inicializar lista de caracteres
-    CHARACTERS.split('').forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c;
-      opt.textContent = `'${c}' (U+${c.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0')})`;
-      charSelect.appendChild(opt);
-    });
+    // Almacén de matrices para cada glifo
+    const glyphDatabase = {};
 
-    // Construir cuadrícula con eventos de arrastre
-    for (let y = 0; y < GRID_SIZE; y++) {
-      for (let x = 0; x < GRID_SIZE; x++) {
-        const cell = document.createElement('div');
-        cell.className = 'cell' + (y === BASELINE_ROW ? ' guide-baseline' : '');
-        cell.dataset.x = x;
-        cell.dataset.y = y;
+    // Generador procedural de arquetipos góticos para inicializar todo el abecedario
+    function generateGothicArchetype(char, res, stem, diamond) {
+      const mat = Array(res).fill(0).map(() => Array(res).fill(0));
+      const baseline = Math.floor(res * 0.78);
+      const capHeight = Math.floor(res * 0.18);
+      const xHeight = Math.floor(res * 0.42);
+      const isUpper = (char >= 'A' && char <= 'Z');
+      const isNum = (char >= '0' && char <= '9');
 
-        cell.addEventListener('mousedown', (e) => {
-          isDrawing = true;
-          drawMode = currentMatrix[y][x] === 1 ? 0 : 1;
-          applyPixel(x, y, cell);
-        });
+      const top = isUpper ? capHeight : (['b','d','f','h','k','l','t'].includes(char) ? capHeight : xHeight);
+      const bottom = ['g','j','p','q','y'].includes(char) ? Math.min(res - 2, baseline + 4) : baseline;
+      const left = 3;
+      const right = Math.min(res - 4, left + (isUpper ? 11 : 8));
+      const midX = Math.floor((left + right) / 2);
+      const midY = Math.floor((top + bottom) / 2);
 
-        cell.addEventListener('mouseenter', () => {
-          if (isDrawing) applyPixel(x, y, cell);
-        });
-
-        gridEl.appendChild(cell);
-      }
-    }
-
-    window.addEventListener('mouseup', () => isDrawing = false);
-
-    function applyPixel(x, y, el) {
-      currentMatrix[y][x] = drawMode;
-      el.classList.toggle('active', drawMode === 1);
-    }
-
-    function refreshGridDisplay() {
-      const cells = gridEl.children;
-      for (let y = 0; y < GRID_SIZE; y++) {
-        for (let x = 0; x < GRID_SIZE; x++) {
-          const idx = y * GRID_SIZE + x;
-          cells[idx].classList.toggle('active', currentMatrix[y][x] === 1);
-        }
-      }
-    }
-
-    document.getElementById('saveGlyphBtn').addEventListener('click', () => {
-      const char = charSelect.value;
-      glyphData[char] = {
-        matrix: JSON.parse(JSON.stringify(currentMatrix)),
-        advanceCols: parseInt(widthInput.value, 10) || 12
-      };
-      alert(`Glifo '${char}' guardado.`);
-    });
-
-    document.getElementById('clearBtn').addEventListener('click', () => {
-      currentMatrix = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
-      refreshGridDisplay();
-    });
-
-    charSelect.addEventListener('change', () => {
-      const char = charSelect.value;
-      if (glyphData[char]) {
-        currentMatrix = JSON.parse(JSON.stringify(glyphData[char].matrix));
-        widthInput.value = glyphData[char].advanceCols;
-      } else {
-        currentMatrix = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
-      }
-      refreshGridDisplay();
-    });
-
-    // Generación de tipografía OpenType profesional
-    document.getElementById('exportOtfBtn').addEventListener('click', () => {
-      const glyphs = [];
-
-      // 1. Glifo obligatorio .notdef (cuadrado vacío de reserva)
-      const notdefPath = new opentype.Path();
-      notdefPath.moveTo(64, 0);
-      notdefPath.lineTo(64, 768);
-      notdefPath.lineTo(704, 768);
-      notdefPath.lineTo(704, 0);
-      notdefPath.close();
-      glyphs.push(new opentype.Glyph({
-        name: '.notdef',
-        unicode: 0,
-        advanceWidth: 768,
-        path: notdefPath
-      }));
-
-      // 2. Glifo de espacio (" ")
-      glyphs.push(new opentype.Glyph({
-        name: 'space',
-        unicode: 32,
-        advanceWidth: 6 * PIXEL_SCALE,
-        path: new opentype.Path()
-      }));
-
-      // 3. Glifos definidos por el usuario
-      Object.keys(glyphData).forEach(char => {
-        if (char === ' ') return;
-        const entry = glyphData[char];
-        const path = new opentype.Path();
-
-        for (let y = 0; y < GRID_SIZE; y++) {
-          for (let x = 0; x < GRID_SIZE; x++) {
-            if (entry.matrix[y][x] === 1) {
-              const vx = x * PIXEL_SCALE;
-              // El sistema de coordenadas en fuentes tiene la línea base en Y=0 y sube hacia arriba
-              const vy = (BASELINE_ROW - y) * PIXEL_SCALE;
-
-              path.moveTo(vx, vy);
-              path.lineTo(vx + PIXEL_SCALE, vy);
-              path.lineTo(vx + PIXEL_SCALE, vy + PIXEL_SCALE);
-              path.lineTo(vx, vy + PIXEL_SCALE);
-              path.close();
-            }
+      // Auxiliares para trazar fustes con remates góticos
+      function drawStem(col, y1, y2) {
+        for (let y = y1; y <= y2; y++) {
+          for (let s = 0; s < stem; s++) {
+            if (col + s < res && y < res && y >= 0) mat[y][col + s] = 1;
           }
         }
+        // Remate en diamante superior e inferior
+        if (diamond > 0) {
+          if (y1 > 0 && col - 1 >= 0) mat[y1][col - 1] = 1;
+          if (y1 - 1 >= 0) mat[y1 - 1][col] = 1;
+          if (y2 < res - 1) mat[y2 + 1][col] = 1;
+          if (y2 < res && col + stem < res) mat[y2][col + stem] = 1;
+        }
+      }
 
-        glyphs.push(new opentype.Glyph({
-          name: char,
-          unicode: char.charCodeAt(0),
-          advanceWidth: entry.advanceCols * PIXEL_SCALE,
-          path: path
-        }));
-      });
+      function drawHBar(y, x1, x2) {
+        for (let x = x1; x <= x2; x++) {
+          if (x < res && y < res && y >= 0) mat[y][x] = 1;
+        }
+      }
 
-      const font = new opentype.Font({
-        familyName: 'GothicPixelCustom',
-        styleName: 'Regular',
-        unitsPerEm: 1024,
-        ascender: BASELINE_ROW * PIXEL_SCALE,       // 12 * 64 = 768
-        descender: (BASELINE_ROW - GRID_SIZE) * PIXEL_SCALE, // (12 - 16) * 64 = -256
-        glyphs: glyphs
-      });
+      function drawDiag(x1, y1, x2, y2) {
+        const dx = Math.abs(x2 - x1), dy = Math.abs(y2 - y1);
+        const sx = x1 < x2 ? 1 : -1, sy = y1 < y2 ? 1 : -1;
+        let err = dx - dy, cx = x1, cy = y1;
+        while (true) {
+          if (cx >= 0 && cx < res && cy >= 0 && cy < res) mat[cy][cx] = 1;
+          if (cx === x2 && cy === y2) break;
+          const e2 = 2 * err;
+          if (e2 > -dy) { err -= dy; cx += sx; }
+          if (e2 < dx) { err += dx; cy += sy; }
+        }
+      }
 
-      font.download('GothicPixelCustom.otf');
-    });
-  </script>
-</body>
-</html>
+      // Modelado específico por glifo con rasgos de "Blanc IX"
+      switch(char) {
+        case 'B':
+          drawStem(left, top, bottom);
+          drawHBar(top, left, right - 2);
+          drawHBar(midY, left, right - 2);
+          drawHBar(bottom, left, right - 2);
+          drawDiag(right - 2, top + 1, right, top + 3);
+          drawStem(right, top + 3, midY - 2);
+          drawDiag(right, midY - 2, right - 2, midY);
+          drawStem(right, midY + 2, bottom - 3);
+          drawDiag(right, bottom - 3, right - 2, bottom);
+          // Espina gótica interna
+          drawDiag(left + stem + 1, midY - 2, left + stem + 3, midY);
+          break;
+
+        case 'l':
+          drawStem(midX - 1, top, bottom);
+          if (diamond > 0) {
+            mat[bottom][midX + stem] = 1;
+            mat[bottom - 1][midX + stem + 1] = 1;
+          }
+          break;
+
+        case 'a':
+          drawStem(right - stem, top, bottom);
+          drawHBar(top, left + 1, right - stem);
+          drawHBar(midY, left + 1, right - stem);
+          drawHBar(bottom, left + 1, right - stem);
+          drawStem(left, midY, bottom);
+          drawDiag(left, top + 1, left + 2, top);
+          break;
+
+        case 'n':
+          drawStem(left, top, bottom);
+          drawStem(right - stem, top + 1, bottom);
+          drawHBar(top, left, right - stem);
+          drawDiag(left, top + 1, left + 2, top);
+          break;
+
+        case 'c':
+          drawStem(left, top, bottom);
+          drawHBar(top, left, right - 1);
+          drawHBar(bottom, left, right - 1);
+          drawDiag(right - 2, top, right, top + 2);
+          drawDiag(right - 2, bottom, right, bottom - 2);
+          break;
+
+        case 'I':
+          drawStem(midX - 1, top, bottom);
+          drawHBar(top - (diamond ? 1 : 0), midX - 3, midX + stem + 1);
+          drawHBar(bottom + (diamond ? 1 : 0), midX - 3, midX + stem + 1);
+          break;
+
+        case 'X':
+          drawDiag(left + 1, top, right - 1, bottom);
+          drawDiag(right - 1, top, left + 1, bottom);
+          if (stem > 1) {
+            drawDiag(left + 2, top, right, bottom);
+            drawDiag(right - 2, top, left, bottom);
+          }
+          // Remates en esquinas
+          drawHBar(top, left, left + 2);
+          drawHBar(top, right - 2, right);
+          drawHBar(bottom, left, left + 2);
+          drawHBar(bottom, right - 2, right);
+          break;
+
+        case 'A':
+          drawStem(left, top + 3, bottom);
+          drawStem(right - stem, top + 3, bottom);
+          drawDiag(left, top + 3, midX, top);
+          drawDiag(right - stem, top + 3, midX, top);
+          drawHBar(midY + 1, left, right);
+          break;
+
+        case 'O':
+        case '0':
+          drawStem(left, top + 2, bottom - 2);
+          drawStem(right - stem, top + 2, bottom - 2);
+          drawHBar(top, left + 2, right - stem - 2);
+          drawHBar(bottom, left + 2, right - stem - 2);
+          drawDiag(left, top + 2, left + 2, top);
+          drawDiag(right - 1, top + 2, right - 3, top);
+          drawDiag(left, bottom - 2, left + 2, bottom);
+          drawDiag(right - 1, bottom - 2, right - 3, bottom);
+          break;
+
+        default:
+          // Fallback gótico paramétrico estándar
+          drawStem(left, top, bottom);
+          drawHBar(top, left, right);
+          if (isUpper) {
+            drawStem(right - stem, top, midY);
+            drawHBar(midY, left, right);
+          } else {
+            drawHBar(bottom, left, right);
+          }
+          break;
+      }
+
+      return {
+        matrix: mat,
+        advance: Math.min(res, right + 2)
+      };
+    }
+
+    // Inicializar todo el abecedario
+    function initFont() {
+      const diamondVal = parseInt(document.getElementById('sliderDiamo
