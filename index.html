@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Generador Tipográfico Pixel Gótico</title>
+  <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
+  <style>
+    :root { --bg: #141417; --panel: #1e1e24; --accent: #d4a359; --text: #eee; }
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 24px; display: flex; gap: 28px; }
+    .panel { background: var(--panel); padding: 20px; border-radius: 8px; border: 1px solid #333; }
+    #grid { display: grid; grid-template-columns: repeat(16, 22px); grid-gap: 1px; background: #333; padding: 1px; width: fit-content; }
+    .cell { width: 22px; height: 22px; background: #18181b; cursor: pointer; user-select: none; }
+    .cell.active { background: var(--accent); }
+    .cell.guide-baseline { border-bottom: 2px solid #e05656; }
+    .controls { display: flex; flex-direction: column; gap: 14px; min-width: 280px; }
+    label { font-size: 13px; color: #aaa; }
+    select, input, button { padding: 9px 12px; background: #2a2a32; color: #fff; border: 1px solid #444; border-radius: 4px; font-size: 14px; }
+    button { cursor: pointer; font-weight: 600; }
+    button.primary { background: #3b6845; border-color: #4f8b5d; }
+    button.primary:hover { background: #477c53; }
+    .preview-box { margin-top: 15px; padding: 12px; background: #111; border-radius: 4px; font-size: 28px; min-height: 40px; }
+  </style>
+</head>
+<body>
+
+  <div class="panel">
+    <h3 style="margin-top:0;">Matriz de Dibujo (16×16)</h3>
+    <div id="grid"></div>
+    <p style="font-size: 12px; color: #888; margin-top: 8px;">Línea roja: Línea base sugerida (Y=12).</p>
+  </div>
+
+  <div class="panel controls">
+    <h3 style="margin-top:0;">Parámetros del Glifo</h3>
+    
+    <div>
+      <label>Carácter a editar:</label>
+      <select id="charSelect" style="width: 100%;"></select>
+    </div>
+
+    <div>
+      <label>Espacio/Ancho de la letra (columnas activas):</label>
+      <input type="number" id="glyphWidth" min="4" max="16" value="12" style="width: 100%;">
+    </div>
+
+    <div style="display: flex; gap: 8px;">
+      <button id="saveGlyphBtn" style="flex: 1;">Guardar Glifo</button>
+      <button id="clearBtn">Limpiar</button>
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid #333; margin: 10px 0;">
+
+    <button id="exportOtfBtn" class="primary">Descargar Fuente (.otf)</button>
+
+    <div class="preview-box" id="previewArea">Blanc IX</div>
+  </div>
+
+  <script>
+    const GRID_SIZE = 16;
+    const PIXEL_SCALE = 64; // 16 * 64 = 1024 Units per Em
+    const BASELINE_ROW = 12; // Fila donde reposa la letra
+    const CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 -_.,:;!?'\"/\\";
+    
+    const glyphData = {};
+    let currentMatrix = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
+    let isDrawing = false;
+    let drawMode = 1;
+
+    const gridEl = document.getElementById('grid');
+    const charSelect = document.getElementById('charSelect');
+    const widthInput = document.getElementById('glyphWidth');
+
+    // Inicializar lista de caracteres
+    CHARACTERS.split('').forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = `'${c}' (U+${c.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0')})`;
+      charSelect.appendChild(opt);
+    });
+
+    // Construir cuadrícula con eventos de arrastre
+    for (let y = 0; y < GRID_SIZE; y++) {
+      for (let x = 0; x < GRID_SIZE; x++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell' + (y === BASELINE_ROW ? ' guide-baseline' : '');
+        cell.dataset.x = x;
+        cell.dataset.y = y;
+
+        cell.addEventListener('mousedown', (e) => {
+          isDrawing = true;
+          drawMode = currentMatrix[y][x] === 1 ? 0 : 1;
+          applyPixel(x, y, cell);
+        });
+
+        cell.addEventListener('mouseenter', () => {
+          if (isDrawing) applyPixel(x, y, cell);
+        });
+
+        gridEl.appendChild(cell);
+      }
+    }
+
+    window.addEventListener('mouseup', () => isDrawing = false);
+
+    function applyPixel(x, y, el) {
+      currentMatrix[y][x] = drawMode;
+      el.classList.toggle('active', drawMode === 1);
+    }
+
+    function refreshGridDisplay() {
+      const cells = gridEl.children;
+      for (let y = 0; y < GRID_SIZE; y++) {
+        for (let x = 0; x < GRID_SIZE; x++) {
+          const idx = y * GRID_SIZE + x;
+          cells[idx].classList.toggle('active', currentMatrix[y][x] === 1);
+        }
+      }
+    }
+
+    document.getElementById('saveGlyphBtn').addEventListener('click', () => {
+      const char = charSelect.value;
+      glyphData[char] = {
+        matrix: JSON.parse(JSON.stringify(currentMatrix)),
+        advanceCols: parseInt(widthInput.value, 10) || 12
+      };
+      alert(`Glifo '${char}' guardado.`);
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      currentMatrix = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
+      refreshGridDisplay();
+    });
+
+    charSelect.addEventListener('change', () => {
+      const char = charSelect.value;
+      if (glyphData[char]) {
+        currentMatrix = JSON.parse(JSON.stringify(glyphData[char].matrix));
+        widthInput.value = glyphData[char].advanceCols;
+      } else {
+        currentMatrix = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
+      }
+      refreshGridDisplay();
+    });
+
+    // Generación de tipografía OpenType profesional
+    document.getElementById('exportOtfBtn').addEventListener('click', () => {
+      const glyphs = [];
+
+      // 1. Glifo obligatorio .notdef (cuadrado vacío de reserva)
+      const notdefPath = new opentype.Path();
+      notdefPath.moveTo(64, 0);
+      notdefPath.lineTo(64, 768);
+      notdefPath.lineTo(704, 768);
+      notdefPath.lineTo(704, 0);
+      notdefPath.close();
+      glyphs.push(new opentype.Glyph({
+        name: '.notdef',
+        unicode: 0,
+        advanceWidth: 768,
+        path: notdefPath
+      }));
+
+      // 2. Glifo de espacio (" ")
+      glyphs.push(new opentype.Glyph({
+        name: 'space',
+        unicode: 32,
+        advanceWidth: 6 * PIXEL_SCALE,
+        path: new opentype.Path()
+      }));
+
+      // 3. Glifos definidos por el usuario
+      Object.keys(glyphData).forEach(char => {
+        if (char === ' ') return;
+        const entry = glyphData[char];
+        const path = new opentype.Path();
+
+        for (let y = 0; y < GRID_SIZE; y++) {
+          for (let x = 0; x < GRID_SIZE; x++) {
+            if (entry.matrix[y][x] === 1) {
+              const vx = x * PIXEL_SCALE;
+              // El sistema de coordenadas en fuentes tiene la línea base en Y=0 y sube hacia arriba
+              const vy = (BASELINE_ROW - y) * PIXEL_SCALE;
+
+              path.moveTo(vx, vy);
+              path.lineTo(vx + PIXEL_SCALE, vy);
+              path.lineTo(vx + PIXEL_SCALE, vy + PIXEL_SCALE);
+              path.lineTo(vx, vy + PIXEL_SCALE);
+              path.close();
+            }
+          }
+        }
+
+        glyphs.push(new opentype.Glyph({
+          name: char,
+          unicode: char.charCodeAt(0),
+          advanceWidth: entry.advanceCols * PIXEL_SCALE,
+          path: path
+        }));
+      });
+
+      const font = new opentype.Font({
+        familyName: 'GothicPixelCustom',
+        styleName: 'Regular',
+        unitsPerEm: 1024,
+        ascender: BASELINE_ROW * PIXEL_SCALE,       // 12 * 64 = 768
+        descender: (BASELINE_ROW - GRID_SIZE) * PIXEL_SCALE, // (12 - 16) * 64 = -256
+        glyphs: glyphs
+      });
+
+      font.download('GothicPixelCustom.otf');
+    });
+  </script>
+</body>
+</html>
