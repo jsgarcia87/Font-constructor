@@ -125,6 +125,15 @@ input[type="color"] {
 .tincture:hover { transform: translateY(-1px); border-color: var(--gold); }
 .tincture[title]::after { content: none; }
 
+.btn-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+.btn-pair button { font-size: 13px; padding: 8px 6px; }
+.xform-presets button { font-size: 13px; padding: 4px 9px; }
+.xform-presets button.active { background: var(--gold); color: #1b1305; border-color: var(--gold); }
+.font-panel .xform { margin-bottom: 8px; }
+.xform-note {
+  font-size: 12.5px; color: #1b1305; background: var(--gold); border-radius: 6px; padding: 6px 10px; margin: 8px 0 0;
+}
+
 /* ------------------------------ escenario ----------------------------- */
 .stage { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .stage-bar, .export-bar {

@@ -113,6 +113,43 @@
         <label class="row color" data-show="bg.frame:true">Color del marco <input type="color" data-k="bg.frameColor"></label>
       </details>
 
+      <details open>
+        <summary>Transformar abecedario</summary>
+        <div class="xform">
+          <p class="muted small">Modifica todas las letras a la vez. El dibujo original no se pierde: puedes volver atrás cuando quieras.</p>
+          <div class="chips xform-presets"></div>
+          <label class="row">Grosor de los fustes <output data-tout="weightX"></output>
+            <input type="range" min="-1" max="3" step="1" data-t="weightX"></label>
+          <label class="row">Grosor de los trazos horizontales <output data-tout="weightY"></output>
+            <input type="range" min="0" max="2" step="1" data-t="weightY"></label>
+          <label class="row">Pixelado (tamaño del bloque) <output data-tout="block"></output>
+            <input type="range" min="1" max="3" step="1" data-t="block"></label>
+          <label class="row" data-tshow="block">Umbral del pixelado <output data-tout="threshold"></output>
+            <input type="range" min="30" max="80" step="5" data-t="threshold"></label>
+          <label class="row">Anchura
+            <select data-t="scaleX">
+              <option value="0.75">Condensada</option>
+              <option value="1">Normal</option>
+              <option value="1.25">Ancha</option>
+              <option value="1.5">Expandida</option>
+              <option value="2">Muy expandida</option>
+            </select></label>
+          <label class="row">Inclinación (cursiva) <output data-tout="slant"></output>
+            <input type="range" min="0" max="3" step="1" data-t="slant"></label>
+          <label class="row">Trazo
+            <select data-t="stroke">
+              <option value="solid">Macizo</option>
+              <option value="hollow">Hueco (solo contorno)</option>
+              <option value="engraved">Grabado (líneas horizontales)</option>
+              <option value="shadowed">Sombreado (filete de luz)</option>
+            </select></label>
+          <div class="btn-pair">
+            <button class="xform-reset">Restablecer</button>
+            <button class="xform-bake" title="Convierte la transformación en el nuevo dibujo de cada glifo, para seguir retocándolo en el editor">Fijar en los glifos</button>
+          </div>
+        </div>
+      </details>
+
       <details>
         <summary>Capitular iluminada</summary>
         <label class="row check"><input type="checkbox" data-k="cap.on"> Destacar la primera letra</label>
@@ -155,6 +192,41 @@
       </div>
 
       <aside class="font-panel">
+        <h3>Transformar todo el abecedario</h3>
+        <div class="xform">
+          <p class="muted small">Modifica todas las letras a la vez. El dibujo original no se pierde: puedes volver atrás cuando quieras.</p>
+          <div class="chips xform-presets"></div>
+          <label class="row">Grosor de los fustes <output data-tout="weightX"></output>
+            <input type="range" min="-1" max="3" step="1" data-t="weightX"></label>
+          <label class="row">Grosor de los trazos horizontales <output data-tout="weightY"></output>
+            <input type="range" min="0" max="2" step="1" data-t="weightY"></label>
+          <label class="row">Pixelado (tamaño del bloque) <output data-tout="block"></output>
+            <input type="range" min="1" max="3" step="1" data-t="block"></label>
+          <label class="row" data-tshow="block">Umbral del pixelado <output data-tout="threshold"></output>
+            <input type="range" min="30" max="80" step="5" data-t="threshold"></label>
+          <label class="row">Anchura
+            <select data-t="scaleX">
+              <option value="0.75">Condensada</option>
+              <option value="1">Normal</option>
+              <option value="1.25">Ancha</option>
+              <option value="1.5">Expandida</option>
+              <option value="2">Muy expandida</option>
+            </select></label>
+          <label class="row">Inclinación (cursiva) <output data-tout="slant"></output>
+            <input type="range" min="0" max="3" step="1" data-t="slant"></label>
+          <label class="row">Trazo
+            <select data-t="stroke">
+              <option value="solid">Macizo</option>
+              <option value="hollow">Hueco (solo contorno)</option>
+              <option value="engraved">Grabado (líneas horizontales)</option>
+              <option value="shadowed">Sombreado (filete de luz)</option>
+            </select></label>
+          <div class="btn-pair">
+            <button class="xform-reset">Restablecer</button>
+            <button class="xform-bake" title="Convierte la transformación en el nuevo dibujo de cada glifo, para seguir retocándolo en el editor">Fijar en los glifos</button>
+          </div>
+        </div>
+
         <h3>Fuente</h3>
         <label class="row">Nombre de la familia
           <input type="text" id="fontName" value="Blason Pixel" maxlength="40"></label>

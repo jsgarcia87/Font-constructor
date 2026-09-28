@@ -105,6 +105,11 @@
     styleSaveT = setTimeout(() => storage.set(LS_STYLE, JSON.stringify(S)), 300);
   }
   loadGlyphs();
+  const LS_TRANSFORM = 'forja-heraldica:transform:v1';
+  try {
+    const t = JSON.parse(storage.get(LS_TRANSFORM) || 'null');
+    if (t) E.setTransform(t);
+  } catch (e) { /* transformación guardada corrupta */ }
 
   /* ------------------------------ pestañas ---------------------------- */
   function showTab(id) {
@@ -238,7 +243,10 @@
       shadow: { x: 1, y: 1, color: '#000000' }, bevel: false, cap: { on: false }, bg: { mode: 'none', frame: false }
     });
     const small = window.matchMedia('(max-width: 600px)').matches;
+    const saved = { ...E.transform };
+    E.resetTransform();                       // la cabecera siempre con el diseño original
     R.toCanvas(R.render(st), small ? 1 : 2, $('#brandCanvas'));
+    E.setTransform(saved);
   }
 
   /* ============================ FUENTE / OTF ========================== */
@@ -283,7 +291,7 @@
     try {
       const r = X.importProject(await f.text());
       if (r.name) $('#fontName').value = r.name;
-      glyphsChanged(); buildAlphabet(true);
+      transformChanged(); glyphsChanged(); buildAlphabet(true);
       toast(`Proyecto cargado: ${r.count} glifos`);
     } catch (err) { toast('No se pudo leer el proyecto: ' + err.message, 4000); }
     e.target.value = '';
@@ -318,7 +326,7 @@
   /* ============================ ABECEDARIO ============================ */
   let alphaVersion = -1;
   function glyphThumb(ch) {
-    const g = E.glyph(ch) || E.blank(6);
+    const g = E.display(ch) || E.blank(6);
     const cv = document.createElement('canvas');
     cv.width = Math.max(g.w, 6); cv.height = E.H;
     const ctx = cv.getContext('2d');
@@ -374,7 +382,8 @@
       const base = window.BLASON_GLYPHS.COMPOSE[ch][0];
       origin += ` (${base} + marca)`;
     }
-    return `U+${cp.toString(16).toUpperCase().padStart(4, '0')} · ${kind} · ${work.w} col · ${origin}`;
+    const note = E.isIdentity() ? '' : ' · la vista previa incluye la transformación global';
+    return `U+${cp.toString(16).toUpperCase().padStart(4, '0')} · ${kind} · ${work.w} col · ${origin}${note}`;
   }
 
   function loadEditorChar(ch) {
@@ -556,10 +565,83 @@
     resizeT = setTimeout(() => { drawEditor(); drawBrand(); renderPreview(); }, 120);
   });
 
+  /* ===================== TRANSFORMAR EL ABECEDARIO ==================== */
+  const XFORM_PRESETS = [
+    ['Original', {}],
+    ['Negrita', { weightX: 1 }],
+    ['Extra negra', { weightX: 2, weightY: 1 }],
+    ['Fina', { weightX: -1 }],
+    ['8 bits', { block: 2, weightX: 1 }],
+    ['Mosaico', { block: 3, weightX: 1, threshold: 55 }],
+    ['Expandida', { scaleX: 1.5 }],
+    ['Condensada', { scaleX: 0.75 }],
+    ['Cursiva', { slant: 2 }],
+    ['Hueca', { weightX: 2, stroke: 'hollow' }],
+    ['Grabada', { weightX: 1, weightY: 1, stroke: 'engraved' }],
+    ['Sombreada', { weightX: 2, stroke: 'shadowed' }]
+  ];
+  const tLabel = {
+    weightX: v => (v > 0 ? '+' : '') + v + ' px',
+    weightY: v => '+' + v + ' px',
+    block: v => v == 1 ? 'original' : v + '×' + v,
+    threshold: v => v + ' %',
+    slant: v => ['recta', 'suave', 'media', 'fuerte'][v] || v
+  };
+
+  function syncTransform() {
+    const t = E.transform;
+    $$('[data-t]').forEach(el => { el.value = String(t[el.dataset.t]); });
+    $$('[data-tout]').forEach(o => {
+      const k = o.dataset.tout, f = tLabel[k];
+      o.textContent = f ? f(t[k]) : t[k];
+    });
+    $$('[data-tshow]').forEach(el => { el.dataset.hidden = Number(t[el.dataset.tshow]) > 1 ? 'false' : 'true'; });
+    const key = E.transformKey;
+    $$('.xform-presets button').forEach(b => {
+      const t2 = JSON.stringify({ ...E.DEFAULT_TRANSFORM, ...XFORM_PRESETS[b.dataset.i][1] });
+      b.classList.toggle('active', t2 === key);
+    });
+  }
+
+  let xformT;
+  function transformChanged() {
+    syncTransform();
+    storage.set(LS_TRANSFORM, JSON.stringify(E.transform));
+    renderPreview(); drawEditorPreview();
+    if (editChar && work) $('#charMeta').textContent = charInfo(editChar);
+    clearTimeout(xformT);
+    xformT = setTimeout(() => {           // lo costoso, agrupado
+      buildPresets(); buildAlphabet(true); rebuildLiveFont();
+    }, 150);
+  }
+
+  $$('.xform-presets').forEach(box => {
+    XFORM_PRESETS.forEach(([name, t], i) => {
+      const b = document.createElement('button');
+      b.textContent = name; b.dataset.i = i;
+      b.addEventListener('click', () => { E.resetTransform(); E.setTransform(t); transformChanged(); });
+      box.appendChild(b);
+    });
+  });
+  $$('[data-t]').forEach(el => el.addEventListener('input', () => {
+    const k = el.dataset.t;
+    E.setTransform({ [k]: k === 'stroke' ? el.value : Number(el.value) });
+    transformChanged();
+  }));
+  $$('.xform-reset').forEach(b => b.addEventListener('click', () => { E.resetTransform(); transformChanged(); }));
+  $$('.xform-bake').forEach(b => b.addEventListener('click', () => {
+    if (E.isIdentity()) { toast('No hay ninguna transformación activa.'); return; }
+    if (!confirm('Se guardará la transformación como el nuevo dibujo de todos los glifos, para que puedas retocarlos en el editor.\n\nLos acentos quedarán fijados (ya no se regenerarán al editar la letra base). Siempre puedes volver al diseño original con «Restaurar todos los glifos».\n\n¿Continuar?')) return;
+    const n = E.bakeTransform();
+    transformChanged(); glyphsChanged(); loadEditorChar(editChar);
+    toast(`Transformación fijada en ${n} glifos`);
+  }));
+
   /* ------------------------------ arranque ---------------------------- */
   $('#textInput').value = S.text || 'Blanc IX';
   buildPresets();
   syncControls();
+  syncTransform();
   drawBrand();
   renderPreview();
   loadEditorChar('B');

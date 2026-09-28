@@ -12,7 +12,7 @@
 
   /* ---------- utilidades de matriz: {w, h, d: Uint8Array} ---------- */
   function blank(w, h = H) { return { w, h, d: new Uint8Array(w * h) }; }
-  function clone(g) { return { w: g.w, h: g.h, d: new Uint8Array(g.d) }; }
+  function clone(g) { const c = { w: g.w, h: g.h, d: new Uint8Array(g.d) }; if (g.adv != null) c.adv = g.adv; return c; }
   function get(g, x, y) { return x >= 0 && y >= 0 && x < g.w && y < g.h ? g.d[y * g.w + x] : 0; }
   function set(g, x, y, v = 1) { if (x >= 0 && y >= 0 && x < g.w && y < g.h) g.d[y * g.w + x] = v; }
 
@@ -163,16 +163,178 @@
     for (let y = 0; y < g.h; y++)
       for (let x = 0; x < g.w; x++)
         if (g.d[y * g.w + x]) for (let k = 0; k <= amount; k++) set(n, x + k, y);
+    if (g.adv != null) n.adv = g.adv + amount;
     return n;
+  }
+
+  /** Avance horizontal del glifo (sin el espaciado entre letras). */
+  function advanceOf(g) {
+    if (g.adv != null) return g.adv;
+    const b = bounds(g);
+    return b ? b.maxX + 1 : g.w;
+  }
+
+  /* ------------- transformación global de todo el abecedario ---------- */
+  // Parámetros que se aplican encima de cada glifo (sin destruir el dibujo):
+  //   weightX  grosor horizontal (-1 adelgaza, +1..+3 engorda)
+  //   weightY  grosor vertical (engorda los trazos horizontales hacia arriba)
+  //   block    pixelado: tamaño del "píxel gordo" (1 = original, 2..4)
+  //   threshold % de cobertura necesario para encender un bloque
+  //   scaleX   anchura (0.75 condensada ... 2 muy expandida)
+  //   slant    inclinación cursiva (0..3)
+  //   stroke   'solid' | 'hollow' (hueca) | 'engraved' (grabada) | 'shadowed' (sombreada)
+  const DEFAULT_TRANSFORM = { weightX: 0, weightY: 0, block: 1, threshold: 60, scaleX: 1, slant: 0, stroke: 'solid' };
+  const transform = { ...DEFAULT_TRANSFORM };
+  let transformKey = JSON.stringify(transform);
+  const displayCache = {};
+
+  function setTransform(t) {
+    Object.assign(transform, t);
+    transformKey = JSON.stringify(transform);
+  }
+  function resetTransform() { setTransform(DEFAULT_TRANSFORM); }
+  function isIdentity() { return transformKey === JSON.stringify(DEFAULT_TRANSFORM); }
+
+  function scaleWidth(g, sx) {
+    if (sx === 1) return g;
+    const nw = Math.max(1, Math.round(g.w * sx));
+    const n = blank(nw, g.h);
+    for (let y = 0; y < g.h; y++)
+      for (let x = 0; x < nw; x++)
+        if (get(g, Math.min(g.w - 1, Math.floor((x + 0.5) / sx)), y)) set(n, x, y);
+    return n;
+  }
+
+  function thin(g) {
+    // Quita el píxel más a la derecha de cada tramo horizontal de 2 o más
+    const n = clone(g);
+    for (let y = 0; y < g.h; y++)
+      for (let x = 0; x < g.w; x++)
+        if (get(g, x, y) && !get(g, x + 1, y) && get(g, x - 1, y)) set(n, x, y, 0);
+    return n;
+  }
+
+  function thickenY(g, amount) {
+    if (!amount) return g;
+    const n = clone(g);
+    for (let y = 0; y < g.h; y++)
+      for (let x = 0; x < g.w; x++)
+        if (get(g, x, y)) for (let k = 1; k <= amount; k++) set(n, x, y - k);
+    return n;
+  }
+
+  function shear(g, slant, k = 1) {
+    if (!slant) return g;
+    // filas por cada paso; con pixelado, los pasos son del tamaño del bloque
+    const every = ([0, 6, 4, 3][slant] || 3) * k;
+    const shiftAt = y => Math.floor((BASELINE_ROW - y) / every) * k;
+    const maxS = shiftAt(0), minS = shiftAt(g.h - 1);
+    const n = blank(g.w + maxS - minS, g.h);
+    for (let y = 0; y < g.h; y++)
+      for (let x = 0; x < g.w; x++)
+        if (get(g, x, y)) set(n, x + shiftAt(y) - minS, y);
+    // El avance se mide en la línea base: la cursiva no separa las letras
+    n.adv = advanceOf(g) + shiftAt(BASELINE_ROW) - minS;
+    return n;
+  }
+
+  function pixelateAt(g, k, need, ox) {
+    // Rejilla anclada en la línea base (vertical) y desplazada ox columnas
+    const base = BASELINE_ROW + 1;
+    const n = blank(Math.ceil((g.w + ox) / k) * k, g.h);
+    for (let top = base - Math.ceil(base / k) * k; top < g.h; top += k)
+      for (let left = -ox; left < g.w; left += k) {
+        let on = 0;
+        for (let y = top; y < top + k; y++)
+          for (let x = left; x < left + k; x++) on += get(g, x, y);
+        if (on && on / (k * k) >= need)
+          for (let y = top; y < top + k; y++)
+            for (let x = left; x < left + k; x++) set(n, x + ox, y);
+      }
+    return n;
+  }
+
+  function pixelate(g, k, threshold) {
+    if (k <= 1) return g;
+    const need = threshold / 100;
+    // Se prueba cada desplazamiento horizontal de la rejilla gruesa y se elige
+    // el que más se parece al dibujo original (conserva las contraformas).
+    let best = null, bestErr = Infinity;
+    for (let ox = 0; ox < k; ox++) {
+      const r = pixelateAt(g, k, need, ox);
+      let err = 0;
+      for (let y = 0; y < g.h; y++)
+        for (let x = 0; x < Math.max(g.w + ox, r.w); x++)
+          if (get(g, x - ox, y) !== get(r, x, y)) err++;
+      if (err < bestErr) { bestErr = err; best = { r, ox }; }
+    }
+    // Deshacer el desplazamiento para no añadir aire a la izquierda
+    const b = bounds(best.r);
+    if (!b || !best.ox) return best.r;
+    const shift = Math.min(best.ox, b.minX);
+    return shift ? widen(best.r, best.r.w, -shift) : best.r;
+  }
+
+  function strokeStyle(g, mode) {
+    if (mode === 'solid') return g;
+    const n = clone(g);
+    for (let y = 0; y < g.h; y++)
+      for (let x = 0; x < g.w; x++) {
+        if (!get(g, x, y)) continue;
+        const interior = get(g, x - 1, y) && get(g, x + 1, y) && get(g, x, y - 1) && get(g, x, y + 1);
+        if (mode === 'hollow' && interior) set(n, x, y, 0);
+        // grabada: una línea vacía horizontal cada 3 filas dentro del trazo
+        if (mode === 'engraved' && interior && (BASELINE_ROW - y) % 3 === 1) set(n, x, y, 0);
+        // sombreada: vacía la mitad izquierda interior de los fustes (luz)
+        if (mode === 'shadowed' && interior && get(g, x - 2, y) === 0) set(n, x, y, 0);
+      }
+    return n;
+  }
+
+  function applyTransform(g, t = transform) {
+    if (!g) return g;
+    const k = Math.max(1, t.block | 0);
+    // Orden: anchura -> pixelado -> grosor -> inclinación -> trazo.
+    // Pixelar antes de engordar conserva las contraformas abiertas.
+    let r = scaleWidth(g, Number(t.scaleX) || 1);
+    r = pixelate(r, k, Number(t.threshold) || 60);
+    const wx = t.weightX | 0;
+    if (wx < 0) r = thin(r); else r = embolden(r, wx);
+    r = thickenY(r, t.weightY | 0);
+    r = shear(r, t.slant | 0, k);
+    r = strokeStyle(r, t.stroke || 'solid');
+    return r;
+  }
+
+  /** Glifo tal y como se muestra/exporta (con la transformación global). */
+  function display(ch) {
+    const raw = glyph(ch);
+    if (!raw || isIdentity()) return raw;
+    const c = displayCache[ch];
+    if (c && c.v === version && c.k === transformKey && c.raw === raw) return c.g;
+    const g = applyTransform(raw);
+    displayCache[ch] = { v: version, k: transformKey, raw, g };
+    return g;
+  }
+
+  /** Congela la transformación en todos los glifos (se vuelven editables). */
+  function bakeTransform() {
+    if (isIdentity()) return 0;
+    const chars = allChars().filter(c => c !== ' ');
+    const baked = chars.map(ch => [ch, glyph(ch) && applyTransform(glyph(ch))]);
+    for (const [ch, g] of baked) if (g) overrides[ch] = g;
+    version++;
+    resetTransform();
+    return baked.length;
   }
 
   /* -------------------------- composición ----------------------------- */
   const FALLBACK = '?';
   function resolve(ch) {
-    let g = glyph(ch);
+    let g = display(ch);
     if (!g) {
       const n = ch.normalize('NFD')[0];
-      g = glyph(n) || glyph(ch.toLowerCase()) || glyph(ch.toUpperCase()) || glyph(FALLBACK);
+      g = display(n) || display(ch.toLowerCase()) || display(ch.toUpperCase()) || display(FALLBACK);
     }
     return g;
   }
@@ -187,7 +349,7 @@
     const leading = opts.leading ?? 2;
     const weight = opts.weight ?? 0;
     const align = opts.align || 'left';
-    const spaceW = (opts.spaceWidth ?? 5) + weight;
+    const spaceW = Math.round(((opts.spaceWidth ?? 5) + weight) * (Number(transform.scaleX) || 1));
     const lines = String(text).split('\n');
 
     const placed = []; // {g, x, lineIdx}
@@ -198,15 +360,17 @@
       chars.forEach((ch, i) => {
         if (ch === ' ') { x += spaceW; return; }
         const g = embolden(resolve(ch), weight);
-        const b = bounds(g);
         placed.push({ g, x, li, ch });
-        x += (b ? b.maxX + 1 : g.w) + tracking;
+        x += advanceOf(g) + tracking;
       });
       if (chars.length && chars[chars.length - 1] !== ' ') x -= tracking;
       lineWidths.push(Math.max(0, x));
     });
 
-    const maxW = Math.max(1, ...lineWidths);
+    // Ancho real: la tinta de la última letra puede sobresalir de su avance
+    let inkW = 0;
+    for (const p of placed) inkW = Math.max(inkW, p.x + p.g.w);
+    const maxW = Math.max(1, ...lineWidths, inkW);
     const lineH = H + leading;
     const out = blank(maxW, Math.max(H, lines.length * lineH - leading));
     const lineOffsets = lineWidths.map(w =>
@@ -228,9 +392,11 @@
   global.BlasonEngine = {
     H, BASELINE_ROW, X_TOP_ROW, METRICS,
     CHARSET, BUILTIN_CHARS, allChars, customChars, isComposed,
-    glyph, originalGlyph, resolve, embolden, bounds, blank, clone, get, set, widen,
+    glyph, originalGlyph, resolve, embolden, advanceOf, bounds, blank, clone, get, set, widen,
     setOverride, clearOverride, clearAllOverrides, hasOverride, overrides,
     get version() { return version; },
-    layout
+    layout,
+    DEFAULT_TRANSFORM, transform, setTransform, resetTransform, isIdentity, applyTransform, display, bakeTransform,
+    get transformKey() { return transformKey; }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

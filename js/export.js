@@ -93,15 +93,14 @@
     ];
     for (const ch of E.allChars()) {
       if (ch === ' ') continue;
-      const src = E.glyph(ch);
+      const src = E.display(ch);
       if (!src) continue;
       const g = E.embolden(src, weight);
-      const b = E.bounds(g);
       const cp = ch.codePointAt(0);
       glyphs.push(new opentype.Glyph({
         name: 'uni' + cp.toString(16).toUpperCase().padStart(4, '0'),
         unicode: cp,
-        advanceWidth: ((b ? b.maxX + 1 : g.w) + tracking) * UNIT,
+        advanceWidth: (E.advanceOf(g) + tracking) * UNIT,
         path: glyphPath(g)
       }));
     }
@@ -167,9 +166,8 @@
   function spriteSheet({ weight = 0, color = '#ffffff', cols = 16 } = {}) {
     const chars = E.allChars().filter(c => c !== ' ');
     const items = chars.map(ch => {
-      const g = E.embolden(E.glyph(ch), weight);
-      const b = E.bounds(g);
-      return { ch, g, adv: b ? b.maxX + 1 : g.w };
+      const g = E.embolden(E.display(ch), weight);
+      return { ch, g, adv: E.advanceOf(g) };
     });
     const cellW = Math.max(...items.map(i => i.g.w)) + 1;
     const cellH = E.H + 1;
@@ -200,23 +198,27 @@
       for (let x = 0; x < g.w; x++) r += g.d[y * g.w + x] ? '#' : '.';
       rows.push(r);
     }
-    return { w: g.w, h: g.h, rows };
+    const o = { w: g.w, h: g.h, rows };
+    if (g.adv != null) o.adv = g.adv;
+    return o;
   }
   function deserializeGlyph(o) {
     const g = E.blank(o.w, E.H);
     o.rows.forEach((r, y) => { for (let x = 0; x < r.length; x++) if (r[x] === '#') E.set(g, x, y); });
+    if (o.adv != null) g.adv = o.adv;
     return g;
   }
   function exportProject(name) {
     const glyphs = {};
     for (const ch of Object.keys(E.overrides)) glyphs[ch] = serializeGlyph(E.overrides[ch]);
-    return JSON.stringify({ app: 'forja-heraldica', version: 1, name, height: E.H, glyphs }, null, 1);
+    return JSON.stringify({ app: 'forja-heraldica', version: 1, name, height: E.H, transform: { ...E.transform }, glyphs }, null, 1);
   }
   function importProject(json) {
     const o = typeof json === 'string' ? JSON.parse(json) : json;
     if (!o || !o.glyphs) throw new Error('Archivo de proyecto no válido.');
     let n = 0;
     for (const [ch, g] of Object.entries(o.glyphs)) { E.setOverride(ch, deserializeGlyph(g)); n++; }
+    if (o.transform) E.setTransform(o.transform);
     return { name: o.name, count: n };
   }
 

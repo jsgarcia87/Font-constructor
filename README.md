@@ -16,6 +16,19 @@ Generador de fuentes con estilo **heráldico y medieval-gótico** (textura, insp
 | Símbolos | `+ = * < > & @ # % $ € £ ¢ ¥ § ¶ ° ª º © ® ™ † ‡` |
 | Ornamentos heráldicos | `⚜ ✠ ☩ ♔ ⚔ ❦ ☙ ✦ ♥` |
 
+## Transformar todo el abecedario
+
+Este panel aparece en el Generador y en el Abecedario, y modifica **todas las letras a la vez** sin perder el dibujo original. Los cambios se aplican a la vista previa, a las miniaturas y a todas las exportaciones (OTF, kit web, sprite sheet y PNG).
+
+* **Grosor de los fustes:** de −1 (fina) a +3.
+* **Grosor de los trazos horizontales:** de +0 a +2.
+* **Pixelado:** bloques de 2×2 o 3×3, con un umbral ajustable. Para que las letras sigan siendo legibles, cada una prueba las posibles alineaciones de la rejilla gruesa y se queda con la que más se parece al dibujo original.
+* **Anchura:** condensada, normal, ancha, expandida o muy expandida.
+* **Inclinación:** cursiva en tres niveles, con el espaciado corregido.
+* **Trazo:** macizo, hueco, grabado o sombreado.
+* **Atajos:** Original, Negrita, Extra negra, Fina, 8 bits, Mosaico, Expandida, Condensada, Cursiva, Hueca, Grabada y Sombreada.
+* **Fijar en los glifos:** convierte la transformación en el nuevo dibujo de cada letra, para seguir retocándola en el editor.
+
 ## Las tres pestañas
 
 ### Generador
