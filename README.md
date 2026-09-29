@@ -14,7 +14,27 @@ Generador de fuentes con estilo **heráldico y medieval-gótico** (textura, insp
 | Acentos | `á à â ä ã å ā ă ą ç ć č é è ê ë ě ē ė ę ğ í ì î ï ī ñ ń ó ò ô ö õ ō ø ř š ś ş ú ù û ü ů ū ý ÿ ž ź ż` y sus mayúsculas (español, catalán, gallego, portugués, francés, alemán, italiano, checo, polaco, turco…) |
 | Puntuación | `. , ; : ! ¡ ? ¿ ' " ‘ ’ “ ” « » ‹ › - – — _ ( ) [ ] { } / \ | … · • ^ ~` |
 | Símbolos | `+ = * < > & @ # % $ € £ ¢ ¥ § ¶ ° ª º © ® ™ † ‡` |
-| Ornamentos heráldicos | `⚜ ✠ ☩ ♔ ⚔ ❦ ☙ ✦ ♥` |
+| Ornamentos heráldicos | `⚜ ✠ ☩ ✝ ✚ ☨ ♔ ♛ ⚔ ⚑ ⛨ ♜ ♞ ♝ ☀ ☾ ★ ✶ ✦ ⚓ ⚖ ♦ ♣ ♥ ❦ ☙` |
+| Figuras de blasón | León rampante, águila explayada, dragón, castillo, yelmo, espada, hacha de guerra, llave, cáliz, escudo, escudo cuartelado, campana, rosa heráldica, venera (concha de Santiago), cruz de Santiago y granada |
+
+### Figuras de blasón
+
+Unicode no tiene caracteres para estas figuras, así que están en el **área de uso privado**, de `U+E000` a `U+E00F`:
+
+| Código | Figura | Código | Figura |
+|---|---|---|---|
+| `E000` | León rampante | `E008` | Cáliz |
+| `E001` | Águila explayada | `E009` | Escudo |
+| `E002` | Dragón | `E00A` | Escudo cuartelado |
+| `E003` | Castillo | `E00B` | Campana |
+| `E004` | Yelmo | `E00C` | Rosa heráldica |
+| `E005` | Espada | `E00D` | Venera |
+| `E006` | Hacha de guerra | `E00E` | Cruz de Santiago |
+| `E007` | Llave | `E00F` | Granada |
+
+* **En el generador:** pulsa su miniatura, debajo del cuadro de texto.
+* **En la web**, con el kit CSS: escribe `&#xE003;` para el castillo, o usa `content: "\E003"` en CSS.
+* **En Illustrator o Figma**, con la fuente instalada: usa el panel de glifos.
 
 ## Transformar todo el abecedario
 

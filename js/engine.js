@@ -110,7 +110,8 @@
     'Acentos (minúsculas)': 'áàâäãåāăąæçćčéèêëěēėęğíìîïīıñńóòôöõōøœřšśşúùûüůūýÿžźżßȷ',
     'Puntuación': '.,;:!¡?¿\'"‘’“”«»‹›-–—_()[]{}/\\|…·•`´^~',
     'Símbolos': '+=*<>&@#%$€£¢¥§¶°ªº©®™†‡',
-    'Ornamentos heráldicos': '⚜✠☩♔⚔❦☙✦♥'
+    'Ornamentos heráldicos': '⚜✠☩✝✚☨♔♛⚔⚑⛨♜♞♝☀☾★✶✦⚓⚖♦♣♥❦☙',
+    'Figuras de blasón': '\uE000\uE001\uE002\uE003\uE004\uE005\uE006\uE007\uE008\uE009\uE00A\uE00B\uE00C\uE00D\uE00E\uE00F'
   };
   const BUILTIN_CHARS = Object.values(CHARSET).join('').split('');
 

@@ -78,6 +78,8 @@ input[type="text"], textarea, select {
   padding: 8px 10px; font-size: 15px;
 }
 textarea { resize: vertical; }
+/* Las figuras de uso privado se ven con la fuente compilada en vivo */
+#textInput, #editorSample, #charInput { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, 'Blason Pixel Live', serif; }
 input[type="range"] { width: 100%; accent-color: var(--gold); }
 input[type="checkbox"] { accent-color: var(--gold); width: 16px; height: 16px; }
 input[type="color"] {
@@ -108,6 +110,9 @@ input[type="color"] {
 
 .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
 .chips button { padding: 3px 8px; font-size: 16px; line-height: 1.2; }
+#insertChips { display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 4px; }
+.chips button.orn { padding: 5px 2px; display: grid; place-items: center; height: 38px; }
+.chips button.orn canvas { image-rendering: pixelated; height: 26px; width: auto; max-width: 100%; }
 
 .presets { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .preset {

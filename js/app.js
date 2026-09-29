@@ -179,20 +179,31 @@
     }
   });
 
-  // Ornamentos insertables
-  const ORN = '⚜✠☩♔⚔❦☙✦♥†§«»';
-  Array.from(ORN).forEach(ch => {
-    const b = document.createElement('button');
-    b.textContent = ch; b.title = 'Insertar ' + ch;
-    b.addEventListener('click', () => {
-      const ta = $('#textInput');
-      const s = ta.selectionStart ?? ta.value.length, e = ta.selectionEnd ?? ta.value.length;
-      ta.value = ta.value.slice(0, s) + ch + ta.value.slice(e);
-      ta.focus(); ta.selectionStart = ta.selectionEnd = s + ch.length;
-      renderPreview(); saveStyle();
-    });
-    $('#insertChips').appendChild(b);
-  });
+  // Ornamentos y figuras insertables (miniaturas dibujadas con la propia fuente,
+  // porque las figuras de uso privado no existen en las fuentes del sistema)
+  const NAMES = window.BLASON_GLYPHS.NAMES;
+  const glyphName = ch => NAMES[ch] || ch;
+  function insertText(ch) {
+    const ta = $('#textInput');
+    const s = ta.selectionStart ?? ta.value.length, e = ta.selectionEnd ?? ta.value.length;
+    ta.value = ta.value.slice(0, s) + ch + ta.value.slice(e);
+    ta.focus(); ta.selectionStart = ta.selectionEnd = s + ch.length;
+    renderPreview(); saveStyle();
+  }
+  function buildOrnChips() {
+    const box = $('#insertChips'); box.innerHTML = '';
+    const list = E.CHARSET['Ornamentos heráldicos'] + E.CHARSET['Figuras de blasón'] + '†§«»';
+    for (const ch of Array.from(list)) {
+      const b = document.createElement('button');
+      b.className = 'orn';
+      b.title = 'Insertar: ' + glyphName(ch);
+      b.setAttribute('aria-label', b.title);
+      const cv = glyphThumb(ch, true);
+      b.appendChild(cv);
+      b.addEventListener('click', () => insertText(ch));
+      box.appendChild(b);
+    }
+  }
 
   // Presets con miniatura
   function buildPresets() {
@@ -325,13 +336,15 @@
 
   /* ============================ ABECEDARIO ============================ */
   let alphaVersion = -1;
-  function glyphThumb(ch) {
+  function glyphThumb(ch, crop) {
     const g = E.display(ch) || E.blank(6);
+    const b = crop && E.bounds(g);
+    const y0 = b ? b.minY : 0, y1 = b ? b.maxY : g.h - 1, x0 = b ? b.minX : 0;
     const cv = document.createElement('canvas');
-    cv.width = Math.max(g.w, 6); cv.height = E.H;
+    cv.width = Math.max(g.w - x0, crop ? 1 : 6); cv.height = y1 - y0 + 1;
     const ctx = cv.getContext('2d');
     ctx.fillStyle = '#f1e2bd';
-    for (let y = 0; y < g.h; y++) for (let x = 0; x < g.w; x++) if (g.d[y * g.w + x]) ctx.fillRect(x, y, 1, 1);
+    for (let y = y0; y <= y1; y++) for (let x = x0; x < g.w; x++) if (g.d[y * g.w + x]) ctx.fillRect(x - x0, y - y0, 1, 1);
     return cv;
   }
   function buildAlphabet(force) {
@@ -351,9 +364,12 @@
       for (const ch of list) {
         const card = document.createElement('div');
         card.className = 'gcard' + (E.hasOverride(ch) ? ' edited' : '');
-        card.title = `${ch}  U+${ch.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')} — clic para editar`;
+        card.title = `${NAMES[ch] ? NAMES[ch] + ' · ' : ''}${ch}  U+${ch.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')} — clic para editar`;
         card.appendChild(glyphThumb(ch));
-        const s = document.createElement('small'); s.textContent = ch; card.appendChild(s);
+        const s = document.createElement('small');
+        const cp = ch.codePointAt(0);
+        s.textContent = cp >= 0xE000 && cp <= 0xF8FF ? cp.toString(16).toUpperCase() : ch;
+        card.appendChild(s);
         card.addEventListener('click', () => { loadEditorChar(ch); showTab('edit'); });
         grid.appendChild(card);
       }
@@ -640,6 +656,7 @@
   /* ------------------------------ arranque ---------------------------- */
   $('#textInput').value = S.text || 'Blanc IX';
   buildPresets();
+  buildOrnChips();
   syncControls();
   syncTransform();
   drawBrand();
